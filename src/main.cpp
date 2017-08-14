@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
 
     double prevTime = glfwGetTime();
     static bool run;
+    static int speed = 0;
     while (!glfwWindowShouldClose(win)) {
         glfwPollEvents();
         ImGui_ImplGlfwGL3_NewFrame();
@@ -127,7 +128,8 @@ int main(int argc, char **argv) {
         float dt = (float) (glfwGetTime() - prevTime);
         prevTime = glfwGetTime();
         if (run) {
-            for (int i = 0; i < 100; i++)
+            int steps = (int) (100 * pow(1.1, speed));
+            for (int i = 0; i < steps; i++)
                 cloth.step(dt/25);
         }
         mesh.updateVertexBuffer();
@@ -138,10 +140,12 @@ int main(int argc, char **argv) {
         ImGui::Text("Cloth simulation");
         ImGui::Text("Camera angle: theta %.2f / phi %.2f", camera.theta, camera.phi);
         ImGui::Text("Camera distance: %.2f", camera.distance);
+        ImGui::DragInt("Speed", &speed, 1.0, -15, 15);
         ImGui::Checkbox("Run", &run);
         if (ImGui::Button("Reset")) {
             cloth.reset();
         }
+        ImGui::Checkbox("Max stretch enabled", &cloth.enableMaxStretch);
         ImGui::DragFloat("Point mass", &cloth.pointMass);
         ImGui::DragFloat("Gravity", &cloth.gravityConstant);
         ImGui::DragFloat("Spring", &cloth.springConstant);

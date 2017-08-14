@@ -14,6 +14,8 @@ Cloth::Cloth(int width, int height, float pointMass) :
     springConstant = 15.0;
     airResistance = 0.015;
 
+    enableMaxStretch = true;
+
     position     = new glm::vec3[width*height];
     prevPosition = new glm::vec3[width*height];
     initPosition = new glm::vec3[width*height];
@@ -43,14 +45,56 @@ glm::vec3 Cloth::calcSpringForce(int x1, int y1, int x2, int y2) {
     return springConstant * (glm::length(diff) - rest) * glm::normalize(diff);
 }
 
+void Cloth::fixElongation(float factor, int x1, int y1, int x2, int y2) {
+    int idx1 = IDX(x1, y1);
+    int idx2 = IDX(x2, y2);
+
+    glm::vec3 pos1 = position[idx1],
+              pos2 = position[idx2];
+
+    glm::vec3 diff = pos2 - pos1;
+    float rest = glm::length(initPosition[idx2] - initPosition[idx1]);
+    if (glm::length(diff) > factor * rest) {
+        glm::vec3 mid = (pos1 + pos2)/2.0f;
+        glm::vec3 diff_n = normalize(diff);
+        position[idx1] = mid - diff_n * rest * factor/2.0f;
+        position[idx2] = mid + diff_n * rest * factor/2.0f;
+    }
+}
+
+void Cloth::maxElongation(float factor) {
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            if (y == 0) continue;
+
+            if (x < width - 1)
+                fixElongation(factor, x, y, x+1, y);
+            if (x > 0)
+                fixElongation(factor, x, y, x-1, y);
+            if (y < height - 1)
+                fixElongation(factor, x, y, x, y+1);
+            if (y > 0)
+                fixElongation(factor, x, y, x, y-1);
+            if (x < width - 1 && y < height - 1)
+                fixElongation(factor, x, y, x+1, y+1);
+            if (x < width - 1 && y > 0)
+                fixElongation(factor, x, y, x+1, y-1);
+            if (x > 0 && y < height - 1)
+                fixElongation(factor, x, y, x-1, y+1);
+            if (x > 0 && y > 0)
+                fixElongation(factor, x, y, x-1, y-1);
+        }
+    }
+}
+
 void Cloth::step(float dt) {
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             // the top should be fixed
-            // if (y == 0 && x == 0) continue;
-            // if (y == 0 && x == width-1) continue;
-            // if (y == height-1 && x == 0) continue;
-            // if (y == height-1 && x == width-1) continue;
+            if (y == 0 && x == 0) continue;
+            if (y == 0 && x == width-1) continue;
+            if (y == height-1 && x == 0) continue;
+            if (y == height-1 && x == width-1) continue;
             //if (y == 0) continue;
 
             glm::vec3 prevPos = prevPosition[IDX(x, y)];
@@ -102,6 +146,10 @@ void Cloth::step(float dt) {
         }
     }
 
+    if (enableMaxStretch) {
+        for (int i = 1; i <= 7; i++)
+            maxElongation(1.25);
+    }
     //glm::vec3 v = accel[IDX(width-1, height-1)];
     //printf("vert %.03f %.03f %.03f\n", v[0], v[1], v[2]);
 }

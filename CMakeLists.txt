@@ -19,4 +19,4 @@ include_directories(deps/gl3w/include)
 
 add_definitions(-O3)
 
-target_link_libraries(cloth glfw3)
+target_link_libraries(cloth glfw)

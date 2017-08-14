@@ -29,10 +29,16 @@ class Cloth {
     glm::vec3 *velocity;
     glm::vec3 *accel;
 
+    bool enableMaxStretch;
+
     std::vector<Obstacle*> obstacles;
 
     glm::vec3 calcSpringForce(int x1, int y1, int x2, int y2);
     void reset();
+
+    private:
+    void fixElongation(float factor, int x1, int y1, int x2, int y2);
+    void maxElongation(float factor);
 };
 
 class ClothMesh {
